@@ -1,21 +1,23 @@
 # dnsd: DNS encoder, decoder, and server
 
-*dnsd* is a Node.js package for working with DNS. It converts binary DNS messages to and from convenient JavaScript objects; and it provides a server API, for running a custom name server.
+_Note_: This is a fork of what appears to be a dead `dnsd` project from `@jhs`, for the purpose of fixing bugs and maybe modernizing it.
 
-*dnsd* is available as an npm module.
+_dnsd_ is a Node.js package for working with DNS. It converts binary DNS messages to and from convenient JavaScript objects; and it provides a server API, for running a custom name server.
 
-    $ npm install dnsd
+_dnsd_ is available as an npm module.
+
+    $ npm install dnsd2
 
 ## Example: Running a server
 
 This simple DNS server responds with an "A" (address) record of `1.2.3.4` for every request.
 
 ```javascript
-var dnsd = require('dnsd')
-dnsd.createServer(function(req, res) {
-  res.end('1.2.3.4')
-}).listen(5353, '127.0.0.1')
-console.log('Server running at 127.0.0.1:5353')
+var dnsd = require("dnsd2");
+dnsd.createServer(function (req, res) {
+    res.end("1.2.3.4");
+}).listen(5353, "127.0.0.1");
+console.log("Server running at 127.0.0.1:5353");
 ```
 
 Now test your server:
@@ -44,26 +46,25 @@ Now test your server:
 This example logs all requests. For address (A) queries, it returns two records, with a random TTL, and the final octet of the IP address is the length of the hostname queried.
 
 ```javascript
-var dnsd = require('dnsd')
+var dnsd = require("dnsd2");
 
-var server = dnsd.createServer(handler)
-server.zone('example.com', 'ns1.example.com', 'us@example.com', 'now', '2h', '30m', '2w', '10m')
-      .listen(5353, '127.0.0.1')
-console.log('Server running at 127.0.0.1:5353')
+var server = dnsd.createServer(handler);
+server.zone("example.com", "ns1.example.com", "us@example.com", "now", "2h", "30m", "2w", "10m").listen(5353, "127.0.0.1");
+console.log("Server running at 127.0.0.1:5353");
 
 function handler(req, res) {
-  console.log('%s:%s/%s %j', req.connection.remoteAddress, req.connection.remotePort, req.connection.type, req)
+    console.log("%s:%s/%s %j", req.connection.remoteAddress, req.connection.remotePort, req.connection.type, req);
 
-  var question = req.question[0]
-    , hostname = question.name
-    , length = hostname.length
-    , ttl = Math.floor(Math.random() * 3600)
+    var question = req.question[0],
+        hostname = question.name,
+        length = hostname.length,
+        ttl = Math.floor(Math.random() * 3600);
 
-  if(question.type == 'A') {
-    res.answer.push({name:hostname, type:'A', data:"1.1.1."+length, 'ttl':ttl})
-    res.answer.push({name:hostname, type:'A', data:"2.2.2."+length, 'ttl':ttl})
-  }
-  res.end()
+    if (question.type == "A") {
+        res.answer.push({ name: hostname, type: "A", data: "1.1.1." + length, ttl: ttl });
+        res.answer.push({ name: hostname, type: "A", data: "2.2.2." + length, ttl: ttl });
+    }
+    res.end();
 }
 ```
 
@@ -120,8 +121,8 @@ Server output for these queries:
     127.0.0.1:34427/udp4 {"id":30176,"type":"request","responseCode":0,"opcode":"query","authoritative":false,"truncated":false,"recursion_desired":true,"recursion_available":false,"authenticated":false,"checking_disabled":false,"question":[{"name":"example.com","type":"SOA","class":"IN"}]}
     127.0.0.1:59596/udp4 {"id":19419,"type":"request","responseCode":0,"opcode":"query","authoritative":false,"truncated":false,"recursion_desired":true,"recursion_available":false,"authenticated":false,"checking_disabled":false,"question":[{"name":"example.com","type":"A","class":"IN"}]}
 
-
 ## Example: MX Records
+
 This is an example if you need to route your mail server with an MX record.
 
 ```javascript
@@ -130,25 +131,24 @@ This is an example if you need to route your mail server with an MX record.
 // To test:
 // 1. Run this program
 // 2. dig @localhost -p 5353 example.com mx
- 
-var dnsd = require('dnsd')
- 
-var server = dnsd.createServer(handler)
-server.zone('example.com', 'ns1.example.com', 'us@example.com', 'now', '2h', '30m', '2w', '10m')
-server.listen(5353, '127.0.0.1')
-console.log('Listening at 127.0.0.1:5353')
- 
+
+var dnsd = require("dnsd2");
+
+var server = dnsd.createServer(handler);
+server.zone("example.com", "ns1.example.com", "us@example.com", "now", "2h", "30m", "2w", "10m");
+server.listen(5353, "127.0.0.1");
+console.log("Listening at 127.0.0.1:5353");
+
 function handler(req, res) {
-  var question = res.question && res.question[0]
- 
-  if(question.type != 'MX')
-    return res.end()
- 
-  console.log('MX lookup for domain: %s', question.name)
-  res.answer.push({'name':question.name, 'type':'MX', 'data':[10, 'mail.example.com']})
-  res.answer.push({'name':question.name, 'type':'MX', 'data':[20, 'mail.backupexample.com']})
-  
-  return res.end()
+    var question = res.question && res.question[0];
+
+    if (question.type != "MX") return res.end();
+
+    console.log("MX lookup for domain: %s", question.name);
+    res.answer.push({ name: question.name, type: "MX", data: [10, "mail.example.com"] });
+    res.answer.push({ name: question.name, type: "MX", data: [20, "mail.backupexample.com"] });
+
+    return res.end();
 }
 ```
 
@@ -157,19 +157,17 @@ This server name must be a domain string and not an IP address. Make sure you ha
 
 See http://support.google.com/a/bin/answer.py?hl=en&answer=140034 for more info on MX records and configuration.
 
-
-
 ## Example: Parse a message
 
 ```javascript
-var fs = require('fs')
-var dnsd = require('dnsd')
+var fs = require("fs");
+var dnsd = require("dnsd2");
 
-var msg_file = require.resolve('dnsd/_test_data/registry.npmjs.org-response')
-  , msg_data = fs.readFileSync(msg_file)
-  , message = dnsd.parse(msg_data)
+var msg_file = require.resolve("dnsd/_test_data/registry.npmjs.org-response"),
+    msg_data = fs.readFileSync(msg_file),
+    message = dnsd.parse(msg_data);
 
-console.dir(message)
+console.dir(message);
 ```
 
 Output
@@ -207,18 +205,18 @@ Output
 ## Example: Encode a message
 
 ```javascript
-var dnsd = require('dnsd')
+var dnsd = require("dnsd2");
 
-var questions = [ {name:'example.com', class:'IN', type:'TXT'} ]
-  , message = {type:'query', id:123, opcode:'query', recursion_desired:true, question:questions}
-  , msg_data = dnsd.binify(message)
+var questions = [{ name: "example.com", class: "IN", type: "TXT" }],
+    message = { type: "query", id: 123, opcode: "query", recursion_desired: true, question: questions },
+    msg_data = dnsd.binify(message);
 
-console.log('Encoded = %j', Array.prototype.slice.apply(msg_data))
+console.log("Encoded = %j", Array.prototype.slice.apply(msg_data));
 
-message = dnsd.parse(msg_data)
+message = dnsd.parse(msg_data);
 
-console.log('Round trip:')
-console.dir(message)
+console.log("Round trip:");
+console.dir(message);
 ```
 
 Output:
@@ -241,22 +239,22 @@ Round trip:
 
 ## Defaults
 
-`dnsd` is [defaultable][def]. The option `convenient` (`true` by default) adds convenience code when running a server.  Convenience mode adds several features, mostly to build standards-compliant name servers.
+`dnsd` is [defaultable][def]. The option `convenient` (`true` by default) adds convenience code when running a server. Convenience mode adds several features, mostly to build standards-compliant name servers.
 
 ```javascript
-var dnsd_easy = require('dnsd')
-var dnsd_hard = dnsd_easy.defaults({convenient: false})
+var dnsd_easy = require("dnsd2");
+var dnsd_hard = dnsd_easy.defaults({ convenient: false });
 ```
 
 First, your handler's response object already has `.type = "response"` set; then there are many helpers processing your response:
 
-* You can pass a value to `res.end()`, with special handling depending on type:
-  * Array: those values will be added to the `res.answer` section.
-  * Object: that object will be sent as a response (`res` is unused).
-  * String: the response will add an anser `A` record with your value as the IP address.
-* Automatically respond to `SOA` queries with the `SOA` record.
-* Responses to an `A` query with no answers will add the `SOA` record to the response.
-* If the response records are missing a TTL, use the one from the `.zone()` definition (the `SOA` record)
+-   You can pass a value to `res.end()`, with special handling depending on type:
+    -   Array: those values will be added to the `res.answer` section.
+    -   Object: that object will be sent as a response (`res` is unused).
+    -   String: the response will add an anser `A` record with your value as the IP address.
+-   Automatically respond to `SOA` queries with the `SOA` record.
+-   Responses to an `A` query with no answers will add the `SOA` record to the response.
+-   If the response records are missing a TTL, use the one from the `.zone()` definition (the `SOA` record)
 
 Without convenience mode, dnsd will simply send your response verbatim, as you define it (or throw an encoding error for missing or bad data).
 
